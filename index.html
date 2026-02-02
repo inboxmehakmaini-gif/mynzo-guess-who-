@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guess Who - Mynzo Carbon</title>
+    <style>
+        :root {
+            --frame-gold: #c5a059;
+            --dark-panel: #2c2631;
+            --bg-deep: #1a161d;
+            --text-gold: #f3e5ab;
+            --success-green: #2ecc71;
+            --error-red: #e74c3c;
+        }
+
+        body {
+            font-family: 'Georgia', serif;
+            background-color: var(--bg-deep);
+            background-image: radial-gradient(circle, #2c2631 0%, #1a161d 100%);
+            color: var(--text-gold);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 10px;
+        }
+
+        .royal-frame {
+            width: 100%;
+            max-width: 950px; /* Increased to allow bigger avatars */
+            background: var(--dark-panel);
+            border: 4px solid var(--frame-gold);
+            border-radius: 15px;
+            padding: clamp(15px, 5vw, 40px);
+            box-shadow: 0 0 50px rgba(0,0,0,0.8), inset 0 0 20px rgba(197, 160, 89, 0.2);
+            text-align: center;
+            position: relative;
+        }
+
+        h1 {
+            font-size: clamp(1.8rem, 8vw, 3.5rem);
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            text-shadow: 2px 2px 4px black;
+        }
+
+        .sub-header {
+            font-size: clamp(1rem, 4vw, 1.8rem);
+            font-weight: bold;
+            display: block;
+            margin-top: 15px;
+            color: var(--frame-gold);
+        }
+
+        .progress-wrapper {
+            width: 85%;
+            margin: 20px auto;
+        }
+
+        .progress-label {
+            font-size: 1.2rem;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: var(--text-gold);
+        }
+
+        .progress-container {
+            height: 18px;
+            background: #111;
+            border: 1px solid var(--frame-gold);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #8a6d3b, #f3e5ab, #8a6d3b);
+            transition: width 0.5s ease;
+        }
+
+        .question-box {
+            background: rgba(0,0,0,0.4);
+            border: 1px solid var(--frame-gold);
+            padding: 20px;
+            margin-bottom: 30px;
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(1.1rem, 3.5vw, 1.6rem);
+            line-height: 1.4;
+        }
+
+        .avatar-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            max-width: 850px;
+            margin: 0 auto;
+        }
+
+        @media (min-width: 768px) {
+            .avatar-grid { grid-template-columns: repeat(4, 1fr); }
+        }
+
+        .avatar-card {
+            cursor: pointer;
+            background: #3d3542;
+            padding: 15px; /* More padding for a bigger feel */
+            border: 3px solid #555;
+            border-radius: 15px;
+            transition: transform 0.2s, border-color 0.2s;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 280px; /* Taller card */
+        }
+
+        .avatar-card:hover { transform: scale(1.05); border-color: var(--frame-gold); }
+
+        .avatar-card img {
+            width: 100%;
+            height: 200px; /* Much bigger image area */
+            object-fit: contain;
+            border-radius: 10px;
+            border: 2px solid var(--frame-gold);
+            background: #251f28;
+        }
+
+        .avatar-name {
+            margin-top: 15px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--text-gold);
+            text-transform: capitalize;
+        }
+
+        .avatar-card.correct { border-color: var(--success-green); box-shadow: 0 0 20px var(--success-green); }
+        .avatar-card.wrong { border-color: var(--error-red); opacity: 0.6; }
+
+        #feedback-text {
+            height: 40px;
+            margin-top: 25px;
+            font-weight: bold;
+            font-size: 1.4rem;
+        }
+
+        .screen { display: none; }
+        .active { display: block; animation: fadeIn 0.5s; }
+
+        .btn-gold {
+            background: linear-gradient(#f3e5ab, #c5a059);
+            border: none;
+            padding: 18px 45px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 8px;
+            box-shadow: 0 5px 0 #8a6d3b;
+            text-transform: uppercase;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+<div class="royal-frame">
+    <div id="start-screen" class="screen active">
+        <h1>GUESS WHO</h1>
+        <span class="sub-header">A game for Mynzo Carbon Employees Only</span>
+        <div style="padding: 40px 0;">
+            <p style="font-size: 1.3rem;">Let’s see how well you know your team.</p>
+            <button class="btn-gold" onclick="startGame()">Get Started</button>
+        </div>
+    </div>
+
+    <div id="game-screen" class="screen">
+        <div class="progress-wrapper">
+            <div class="progress-label" id="counter">Question 1 of 10</div>
+            <div class="progress-container"><div class="progress-bar" id="bar"></div></div>
+        </div>
+        <div class="question-box" id="question"></div>
+        <div class="avatar-grid" id="avatarGrid"></div>
+        <div id="feedback-text"></div>
+    </div>
+
+    <div id="result-screen" class="screen">
+        <h1>GAME OVER!</h1>
+        <div id="final-score" style="font-size: 4.5rem; color: var(--frame-gold); margin: 20px 0;">0%</div>
+        <p style="font-size: 1.6rem; margin-bottom: 30px;">This is how well you know your team!</p>
+        <button class="btn-gold" onclick="location.reload()">Play Again</button>
+    </div>
+</div>
+
+<script>
+    const allQuestions = [
+        { q: "Who is most likely to have 50+ tabs open at once?", a: "Mehak" },
+        { q: "Who is the 'Early Bird' who is always the first to join a virtual meeting?", a: "Ayush" },
+        { q: "Who is most likely to own every single Apple product?", a: "Shivang" },
+        { q: "Who is the 'Dark Mode' devotee who uses it on every single app?", a: "Jeet, Amit, Shivang, and Abhishek" },
+        { q: "Who is most likely to suggest a new 'AI tool' to solve a simple problem?", a: "Shivang and Abhishek" },
+        { q: "Who is the 'Camera-On' champion during Google Meet meetings?", a: "James" },
+        { q: "Who is most likely to bribe you by offering you a dragon fruit?", a: "Srishti" },
+        { q: "Who is the one who keeps singing softly or murmuring all the time in the office?", a: "Shivang" },
+        { q: "Who is the one who carries small tiffins and keeps munching all the time?", a: "Ravi" },
+        { q: "Who is most likely to go to bed even before the party begins?", a: "Amit" },
+        { q: "Who is mostly sarcastic and has a great sense of humor?", a: "Amit" },
+        { q: "Who is the king of one-liners?", a: "Abhishek" },
+        { q: "Who is a green tea addict?", a: "Ayush" },
+        { q: "Who is most likely to start a party conversation?", a: "Konark" },
+        { q: "Who is most likely to match the drinking capacity of the younger people at an office party?", a: "Konark" },
+        { q: "Who can speak more than three languages?", a: "Ravi" },
+        { q: "Who is the team's ultimate coffee connoisseur?", a: "Amit" },
+        { q: "Who is most likely to be a night owl?", a: "Abhishek" },
+        { q: "Who is most likely to win a marathon?", a: "Amit and Ayush" }
+    ];
+
+    const team = ["Abhishek", "Amit", "Ayush", "James", "Jeet", "Konark", "Srishti", "Shivang", "Ravi", "Mehak"];
+    let gameQuestions = [];
+    let currentIdx = 0;
+    let score = 0;
+    let canClick = true;
+
+    function startGame() {
+        gameQuestions = [...allQuestions].sort(() => 0.5 - Math.random()).slice(0, 10);
+        showScreen('game-screen');
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        canClick = true;
+        document.getElementById('feedback-text').innerText = "";
+        const qData = gameQuestions[currentIdx];
+        document.getElementById('question').innerText = qData.q;
+        
+        // Progress Updates
+        document.getElementById('counter').innerText = `Question ${currentIdx + 1} of 10`;
+        document.getElementById('bar').style.width = ((currentIdx + 1) / 10) * 100 + "%";
+
+        const validAnswers = team.filter(m => qData.a.includes(m));
+        const correctPerson = validAnswers[Math.floor(Math.random() * validAnswers.length)];
+
+        let options = [correctPerson];
+        while(options.length < 4) {
+            let rand = team[Math.floor(Math.random() * team.length)];
+            if(!options.includes(rand)) options.push(rand);
+        }
+        options.sort(() => 0.5 - Math.random());
+
+        const grid = document.getElementById('avatarGrid');
+        grid.innerHTML = '';
+        options.forEach(name => {
+            const card = document.createElement('div');
+            card.className = 'avatar-card';
+            card.innerHTML = `
+                <img src="${name} avatar.png" alt="${name}">
+                <div class="avatar-name">${name}</div>
+            `;
+            card.onclick = () => check(card, name, qData.a);
+            grid.appendChild(card);
+        });
+    }
+
+    function check(card, name, answer) {
+        if(!canClick) return;
+        canClick = false;
+        const feedback = document.getElementById('feedback-text');
+        
+        if(answer.includes(name)) {
+            score++;
+            card.classList.add('correct');
+            feedback.innerText = "Oh, that's awesome! You are correct! 👑";
+            feedback.style.color = "var(--success-green)";
+        } else {
+            card.classList.add('wrong');
+            feedback.innerText = "Aaah, you need to spend more time with your team! 😅";
+            feedback.style.color = "var(--error-red)";
+        }
+
+        setTimeout(() => {
+            currentIdx++;
+            if(currentIdx < 10) loadQuestion();
+            else finish();
+        }, 3000);
+    }
+
+    function finish() {
+        showScreen('result-screen');
+        document.getElementById('final-score').innerText = ((score / 10) * 100) + "%";
+    }
+
+    function showScreen(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+    }
+</script>
+
+</body>
+</html>
